@@ -18,6 +18,7 @@ export type Conversation = {
   last_message_preview: string
   metadata?: {
     realtime_status?: 'waiting' | 'closed' | 'aborted' | string
+    realtime_draft_text?: string
   }
 }
 

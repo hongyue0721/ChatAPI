@@ -36,7 +36,7 @@ export function useChatWorkspace(isMobile: boolean) {
   const [toolName, setToolName] = useState('')
   const [toolCallId, setToolCallId] = useState('')
   const [toolFormValues, setToolFormValues] = useState<Record<string, ToolFieldValue>>({})
-  const [draftBuffer, setDraftBuffer] = useState('')
+  const [draftBuffers, setDraftBuffers] = useState<Record<string, string>>({})
   const [sending, setSending] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [keyboardOffset, setKeyboardOffset] = useState(0)
@@ -59,6 +59,12 @@ export function useChatWorkspace(isMobile: boolean) {
   const selectedConversation = conversations.find(
     (item) => item.id === selectedConversationId,
   )
+  const hasLocalDraftBuffer =
+    !!selectedConversationId &&
+    Object.prototype.hasOwnProperty.call(draftBuffers, selectedConversationId)
+  const draftBuffer = hasLocalDraftBuffer
+    ? draftBuffers[selectedConversationId] ?? ''
+    : selectedConversation?.metadata?.realtime_draft_text ?? ''
   const isWaitingForUser =
     selectedConversation?.metadata?.realtime_status === 'waiting'
   const availableToolSchemas = getLastToolSchemas(messages)
@@ -78,6 +84,16 @@ export function useChatWorkspace(isMobile: boolean) {
         ]
       : []),
   ]
+
+  function setDraftBufferForConversation(conversationId: string, value: string) {
+    if (!conversationId) return
+    setDraftBuffers((prev) => {
+      return {
+        ...prev,
+        [conversationId]: value,
+      }
+    })
+  }
 
   useEffect(() => {
     let active = true
@@ -109,6 +125,27 @@ export function useChatWorkspace(isMobile: boolean) {
       active = false
     }
   }, [])
+
+  useEffect(() => {
+    setDraftBuffers((prev) => {
+      let changed = false
+      const next = { ...prev }
+      for (const conversation of conversations) {
+        const draftText = conversation.metadata?.realtime_draft_text
+        if (typeof draftText !== 'string') continue
+        if (draftText) {
+          if (next[conversation.id] !== draftText) {
+            next[conversation.id] = draftText
+            changed = true
+          }
+        } else if (next[conversation.id]) {
+          delete next[conversation.id]
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [conversations])
 
   useEffect(() => {
     const conversationChanged =
@@ -258,7 +295,7 @@ export function useChatWorkspace(isMobile: boolean) {
       setToolName('')
       setToolCallId('')
       setToolFormValues({})
-      setDraftBuffer('')
+      setDraftBuffers({})
       setStreamHeartbeatModalOpen(false)
       setStreamHeartbeatText('')
       setStreamHeartbeatIntervalSeconds(0)
@@ -317,7 +354,6 @@ export function useChatWorkspace(isMobile: boolean) {
     setToolName('')
     setToolCallId('')
     setToolFormValues({})
-    setDraftBuffer('')
   }
 
   async function handleDeleteConversation(conversationId: string) {
@@ -424,14 +460,20 @@ export function useChatWorkspace(isMobile: boolean) {
     const chunk = composer.trim()
     if (!chunk) return
     try {
-      await requestJson('/api/chat/draft', {
+      const response = await requestJson<{
+        draft_text?: string
+        draft_length: number
+      }>('/api/chat/draft', {
         method: 'POST',
         body: JSON.stringify({
           text: chunk,
           conversation_id: selectedConversationId || undefined,
         }),
       })
-      setDraftBuffer((prev) => `${prev}${chunk}`)
+      setDraftBufferForConversation(
+        selectedConversationId,
+        typeof response.draft_text === 'string' ? response.draft_text : `${draftBuffer}${chunk}`,
+      )
       setComposer('')
       message.success('已暂存')
     } catch (error) {
@@ -471,6 +513,7 @@ export function useChatWorkspace(isMobile: boolean) {
 
     setSending(true)
     try {
+      setDraftBufferForConversation(selectedConversationId, '')
       const payload = {
         text: finalText,
         mode: composerMode,
@@ -493,7 +536,6 @@ export function useChatWorkspace(isMobile: boolean) {
       setToolName('')
       setToolCallId('')
       setToolFormValues({})
-      setDraftBuffer('')
       await loadConversations(nextConversationId)
       if (nextConversationId) {
         await loadMessages(nextConversationId)
@@ -569,7 +611,6 @@ export function useChatWorkspace(isMobile: boolean) {
     setComposer,
     setComposerMode,
     setDrawerOpen,
-    setDraftBuffer,
     setPruneKeepCount,
     setPruneModalOpen,
     setStreamHeartbeatIntervalSeconds,

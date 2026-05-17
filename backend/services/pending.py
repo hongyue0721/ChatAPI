@@ -25,6 +25,7 @@ class PendingTurn:
     assistant_text: str = ""
     response_id: str = ""
     draft_chunks: list[str] = field(default_factory=list)
+    draft_text: str = ""
     persisted: bool = False
     aborted: bool = False
     abort_message: str = ""
@@ -133,6 +134,7 @@ class PendingTurnRegistry:
             if pending is None or pending.owner_id != owner_id:
                 raise ValueError("conversation is not waiting for a reply")
             pending.draft_chunks.append(chunk)
+            pending.draft_text += chunk
             pending.stream_event.set()
             return pending
 

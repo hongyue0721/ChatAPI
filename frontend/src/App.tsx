@@ -92,7 +92,6 @@ function App() {
               sending={workspace.sending}
               setComposer={workspace.setComposer}
               setComposerMode={workspace.setComposerMode}
-              setDraftBuffer={workspace.setDraftBuffer}
               setToolCallId={workspace.setToolCallId}
               setToolFormValues={workspace.setToolFormValues}
               setToolName={workspace.setToolName}

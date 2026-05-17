@@ -176,7 +176,7 @@ def stream_pending_turn(
                     chunk = pending.draft_chunks.pop(0)
                     for event_chunk in ensure_text_item():
                         yield event_chunk
-                    sent_text += chunk
+                    sent_text = pending.draft_text[: len(sent_text) + len(chunk)]
                     yield emit(
                         "response.output_text.delta",
                         {

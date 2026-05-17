@@ -363,6 +363,7 @@ def register_response_routes(app: Flask, *, deps: AppDependencies) -> None:
                 metadata={
                     **updated_conversation.metadata,
                     "realtime_status": "waiting",
+                    "realtime_draft_text": "",
                 },
             )
         except Exception:
@@ -400,6 +401,7 @@ def register_response_routes(app: Flask, *, deps: AppDependencies) -> None:
                 metadata={
                     **updated_conversation.metadata,
                     "realtime_status": "closed",
+                    "realtime_draft_text": "",
                 },
             )
         usage = assistant._usage_from_texts(pending.input_text, pending.assistant_text)
@@ -518,7 +520,12 @@ def register_response_routes(app: Flask, *, deps: AppDependencies) -> None:
                     "arguments": text,
                 }
             else:
-                assistant_text = normalize_message_text(text)
+                submitted_text = normalize_message_text(text)
+                assistant_text = (
+                    submitted_text
+                    if not pending.draft_text or submitted_text.startswith(pending.draft_text)
+                    else f"{pending.draft_text}{submitted_text}"
+                )
                 output_items = []
                 output_text = assistant_text
                 assistant_metadata = {
@@ -541,6 +548,7 @@ def register_response_routes(app: Flask, *, deps: AppDependencies) -> None:
                 metadata={
                     **updated_conversation.metadata,
                     "realtime_status": "closed",
+                    "realtime_draft_text": "",
                 },
             )
             pending = pending_turns.resolve(
@@ -590,12 +598,24 @@ def register_response_routes(app: Flask, *, deps: AppDependencies) -> None:
             )
         except ValueError as error:
             return {"error": str(error)}, 409
+        conversation = store.get_conversation(conversation_id, owner)
+        if conversation is not None:
+            store.update_conversation(
+                conversation_id,
+                owner,
+                metadata={
+                    **conversation.metadata,
+                    "realtime_status": "waiting",
+                    "realtime_draft_text": pending.draft_text,
+                },
+            )
 
         return {
             "ok": True,
             "conversation_id": pending.conversation_id,
             "request_id": pending.request_id,
-            "draft_length": sum(len(chunk) for chunk in pending.draft_chunks),
+            "draft_text": pending.draft_text,
+            "draft_length": len(pending.draft_text),
         }
 
     @app.get("/api/config/stream-heartbeat")

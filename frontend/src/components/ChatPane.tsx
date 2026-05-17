@@ -48,7 +48,6 @@ type ChatPaneProps = {
   sending: boolean
   setComposer: (value: string) => void
   setComposerMode: (value: ComposerMode) => void
-  setDraftBuffer: (value: string) => void
   setToolCallId: (value: string) => void
   setToolFormValues: React.Dispatch<React.SetStateAction<Record<string, ToolFieldValue>>>
   setToolName: (value: string) => void
@@ -179,7 +178,6 @@ export function ChatPane(props: ChatPaneProps) {
     sending,
     setComposer,
     setComposerMode,
-    setDraftBuffer,
     setToolCallId,
     setToolFormValues,
     setToolName,
@@ -374,7 +372,6 @@ export function ChatPane(props: ChatPaneProps) {
                   disabled={composerMode !== 'assistant_message'}
                   onClick={() => {
                     setComposer(`${draftBuffer}${composer}`)
-                    setDraftBuffer('')
                   }}
                 >
                   继续编辑
@@ -387,9 +384,6 @@ export function ChatPane(props: ChatPaneProps) {
                 onChange={(value) => {
                   const nextMode = value as ComposerMode
                   setComposerMode(nextMode)
-                  if (nextMode !== 'assistant_message') {
-                    setDraftBuffer('')
-                  }
                 }}
                 options={[
                   { label: 'Assistant Message', value: 'assistant_message' },
