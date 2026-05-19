@@ -16,7 +16,7 @@ from ..services.turn_coordinator import PreparedTurn, TurnCoordinator
 def register_response_routes(app: Flask, *, deps: AppDependencies) -> None:
     auth = deps.auth
     store = deps.store
-    user_store = deps.user_store
+    system_config_store = deps.system_config_store
     realtime = app.extensions.get("chat_realtime")
 
     def publish_sync(owner_id: str, conversation_id: str | None = None) -> None:
@@ -101,7 +101,7 @@ def register_response_routes(app: Flask, *, deps: AppDependencies) -> None:
         return handle_protocol_request(data, "anthropic_messages")
 
     @app.post("/api/chat/output/complete")
-    @auth.require_auth
+    @auth.require_session_auth
     def chat_output_complete():
         result = coordinator.complete_manual_output(request.get_json(silent=True) or {})
         if isinstance(result, tuple):
@@ -110,7 +110,7 @@ def register_response_routes(app: Flask, *, deps: AppDependencies) -> None:
         return jsonify(result)
 
     @app.post("/api/chat/output/delta")
-    @auth.require_auth
+    @auth.require_session_auth
     def chat_output_delta():
         result = coordinator.add_manual_output_delta(request.get_json(silent=True) or {})
         if isinstance(result, tuple):
@@ -119,13 +119,13 @@ def register_response_routes(app: Flask, *, deps: AppDependencies) -> None:
         return jsonify(result)
 
     @app.get("/api/config/stream-heartbeat")
-    @auth.require_auth
+    @auth.require_session_auth
     def get_stream_heartbeat_config():
         owner_id = auth.owner_id()
         return {"ok": True, **coordinator.get_stream_heartbeat_settings(owner_id)}
 
     @app.post("/api/config/stream-heartbeat")
-    @auth.require_auth
+    @auth.require_session_auth
     def update_stream_heartbeat_config():
         data = request.get_json(silent=True) or {}
         if not isinstance(data, dict):
@@ -151,13 +151,13 @@ def register_response_routes(app: Flask, *, deps: AppDependencies) -> None:
         }
 
     @app.get("/api/config/automation-rules")
-    @auth.require_auth
+    @auth.require_session_auth
     def get_automation_rules():
         owner_id = auth.owner_id()
         return {"ok": True, "rules": coordinator.get_automation_rules(owner_id)}
 
     @app.post("/api/config/automation-rules")
-    @auth.require_auth
+    @auth.require_session_auth
     def update_automation_rules():
         data = request.get_json(silent=True) or {}
         if not isinstance(data, dict):
@@ -173,16 +173,16 @@ def register_response_routes(app: Flask, *, deps: AppDependencies) -> None:
         return {"ok": True, "rules": normalized}
 
     @app.get("/api/config/system")
-    @auth.require_auth
+    @auth.require_session_auth
     @auth.require_admin
     def get_system_config():
         return {
             "ok": True,
-            **user_store.get_system_config_snapshot(),
+            **system_config_store.get_system_config_snapshot(),
         }
 
     @app.post("/api/config/system")
-    @auth.require_auth
+    @auth.require_session_auth
     @auth.require_admin
     def update_system_config():
         data = request.get_json(silent=True) or {}
@@ -190,17 +190,17 @@ def register_response_routes(app: Flask, *, deps: AppDependencies) -> None:
             return {"error": "request body must be a JSON object"}, 400
 
         try:
-            user_store.update_system_config_snapshot(data)
+            system_config_store.update_system_config_snapshot(data)
         except ValueError as error:
             return {"error": str(error)}, 400
 
         return {
             "ok": True,
-            **user_store.get_system_config_snapshot(),
+            **system_config_store.get_system_config_snapshot(),
         }
 
     @app.get("/api/config/app-info")
-    @auth.require_auth
+    @auth.require_session_auth
     def get_app_info():
         return {
             "ok": True,

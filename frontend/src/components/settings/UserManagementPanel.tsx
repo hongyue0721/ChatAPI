@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Button, Form, Input, Modal, Popconfirm, Select, Table, Typography, message } from 'antd'
+import { Button, Form, Input, Modal, Popconfirm, Select, Table, Typography } from 'antd'
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
 
+import { appMessage } from '../../lib/antdApp'
 import { requestJson } from '../../lib/api'
 import type { User } from '../../types/chat'
 
@@ -33,7 +34,7 @@ export function UserManagementPanel({ open }: UserManagementPanelProps) {
         setUsers(data.users)
       } catch (error) {
         if (!active) return
-        message.error(error instanceof Error ? error.message : '加载用户列表失败')
+        appMessage.error(error instanceof Error ? error.message : '加载用户列表失败')
       } finally {
         if (active) setLoading(false)
       }
@@ -51,9 +52,9 @@ export function UserManagementPanel({ open }: UserManagementPanelProps) {
       })
       setUsers((prev) => [...prev, data.user])
       form.resetFields()
-      message.success('用户已创建')
+      appMessage.success('用户已创建')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '创建用户失败')
+      appMessage.error(error instanceof Error ? error.message : '创建用户失败')
     } finally {
       setCreating(false)
     }
@@ -64,9 +65,9 @@ export function UserManagementPanel({ open }: UserManagementPanelProps) {
     try {
       await requestJson(`/api/admin/users/${userId}`, { method: 'DELETE' })
       setUsers((prev) => prev.filter((u) => u.id !== userId))
-      message.success('用户已删除')
+      appMessage.success('用户已删除')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '删除用户失败')
+      appMessage.error(error instanceof Error ? error.message : '删除用户失败')
     } finally {
       setDeletingId('')
     }
@@ -87,11 +88,11 @@ export function UserManagementPanel({ open }: UserManagementPanelProps) {
         method: 'PUT',
         body: JSON.stringify({ password: values.password }),
       })
-      message.success(`已修改 ${pwUsername} 的密码`)
+      appMessage.success(`已修改 ${pwUsername} 的密码`)
       setPwModalOpen(false)
     } catch (error) {
       if (error instanceof Error) {
-        message.error(error.message)
+        appMessage.error(error.message)
       }
     } finally {
       setPwSubmitting(false)

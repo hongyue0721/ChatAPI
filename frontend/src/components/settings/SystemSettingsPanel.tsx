@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Button, Input, Switch, Typography, message } from 'antd'
+import { Button, Input, Switch, Typography } from 'antd'
 
+import { appMessage } from '../../lib/antdApp'
 import { requestJson } from '../../lib/api'
 import type { SystemConfig } from '../../types/chat'
 
@@ -44,7 +45,7 @@ export function SystemSettingsPanel({ open, onClose }: SystemSettingsPanelProps)
         setSavedConfig(nextConfig)
       } catch (error) {
         if (!active) return
-        message.error(error instanceof Error ? error.message : '系统设置加载失败')
+        appMessage.error(error instanceof Error ? error.message : '系统设置加载失败')
       } finally {
         if (active) setLoading(false)
       }
@@ -82,9 +83,9 @@ export function SystemSettingsPanel({ open, onClose }: SystemSettingsPanelProps)
       }
       setConfig(nextConfig)
       setSavedConfig(nextConfig)
-      message.success('系统设置已保存')
+      appMessage.success('系统设置已保存')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '系统设置保存失败')
+      appMessage.error(error instanceof Error ? error.message : '系统设置保存失败')
     } finally {
       setSaving(false)
     }
@@ -92,7 +93,7 @@ export function SystemSettingsPanel({ open, onClose }: SystemSettingsPanelProps)
 
   async function handleSendTestEmail() {
     if (!testEmail || !testEmail.includes('@')) {
-      message.warning('请输入有效的邮箱地址')
+      appMessage.warning('请输入有效的邮箱地址')
       return
     }
     setSendingTest(true)
@@ -101,10 +102,10 @@ export function SystemSettingsPanel({ open, onClose }: SystemSettingsPanelProps)
         method: 'POST',
         body: JSON.stringify({ email: testEmail }),
       })
-      message.success('测试邮件已发送')
+      appMessage.success('测试邮件已发送')
       setTestEmail('')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '发送测试邮件失败')
+      appMessage.error(error instanceof Error ? error.message : '发送测试邮件失败')
     } finally {
       setSendingTest(false)
     }

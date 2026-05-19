@@ -14,7 +14,7 @@ from flask import Flask, current_app, jsonify, request, session
 
 from ..core import AuthContext, Settings
 from ..core.auth import build_totp_uri, generate_totp_secret, verify_totp_code
-from ..repositories import UserStore
+from ..repositories import SystemConfigStore, UserStore
 from ..services.email import send_verification_email
 
 
@@ -30,15 +30,22 @@ def _cleanup_expired_codes() -> None:
         del _verification_codes[email]
 
 
-def register_auth_routes(app: Flask, *, auth: AuthContext, settings: Settings, user_store: UserStore) -> None:
+def register_auth_routes(
+    app: Flask,
+    *,
+    auth: AuthContext,
+    settings: Settings,
+    system_config_store: SystemConfigStore,
+    user_store: UserStore,
+) -> None:
 
     def _get_logger() -> Logger:
         return current_app.logger
 
     @app.get("/api/auth/register/config")
     def register_config():
-        ext_reg = user_store.get_system_config("flag.external_registration", "0") == "1"
-        email_ver = user_store.get_system_config("flag.email_verification", "0") == "1"
+        ext_reg = system_config_store.get_system_config("flag.external_registration", "0") == "1"
+        email_ver = system_config_store.get_system_config("flag.email_verification", "0") == "1"
         geetest_enabled = bool(settings.geetest_captcha_id)
         return {
             "ok": True,
@@ -56,7 +63,7 @@ def register_auth_routes(app: Flask, *, auth: AuthContext, settings: Settings, u
         if not email or "@" not in email:
             return jsonify({"error": "请输入有效的邮箱地址"}), 400
 
-        ext_reg = user_store.get_system_config("flag.external_registration", "0") == "1"
+        ext_reg = system_config_store.get_system_config("flag.external_registration", "0") == "1"
         if not ext_reg:
             return jsonify({"error": "注册功能未开放"}), 403
 
@@ -88,7 +95,7 @@ def register_auth_routes(app: Flask, *, auth: AuthContext, settings: Settings, u
         if len(password) < 4:
             return jsonify({"error": "密码至少需要 4 个字符"}), 400
 
-        ext_reg = user_store.get_system_config("flag.external_registration", "0") == "1"
+        ext_reg = system_config_store.get_system_config("flag.external_registration", "0") == "1"
         if not ext_reg:
             return jsonify({"error": "注册功能未开放"}), 403
 
@@ -97,7 +104,7 @@ def register_auth_routes(app: Flask, *, auth: AuthContext, settings: Settings, u
             return jsonify({"error": "该邮箱已注册"}), 400
 
         # Email verification check
-        email_ver = user_store.get_system_config("flag.email_verification", "0") == "1"
+        email_ver = system_config_store.get_system_config("flag.email_verification", "0") == "1"
         if email_ver:
             if not code:
                 return jsonify({"error": "请输入邮箱验证码"}), 400
@@ -191,7 +198,7 @@ def register_auth_routes(app: Flask, *, auth: AuthContext, settings: Settings, u
     @app.get("/api/auth/session")
     def auth_session():
         user = auth.current_user()
-        ext_reg = user_store.get_system_config("flag.external_registration", "0") == "1"
+        ext_reg = system_config_store.get_system_config("flag.external_registration", "0") == "1"
         if user is None:
             return {"authenticated": False, "user": None, "registration_enabled": ext_reg}
 
@@ -205,7 +212,7 @@ def register_auth_routes(app: Flask, *, auth: AuthContext, settings: Settings, u
         }
 
     @app.get("/api/auth/totp/setup")
-    @auth.require_auth
+    @auth.require_session_auth
     def totp_setup():
         user = auth.current_user()
         if user is None:
@@ -238,7 +245,7 @@ def register_auth_routes(app: Flask, *, auth: AuthContext, settings: Settings, u
         }
 
     @app.post("/api/auth/totp/confirm")
-    @auth.require_auth
+    @auth.require_session_auth
     def totp_confirm():
         user = auth.current_user()
         if user is None:
@@ -258,7 +265,7 @@ def register_auth_routes(app: Flask, *, auth: AuthContext, settings: Settings, u
         return {"ok": True}
 
     @app.post("/api/auth/totp/reset")
-    @auth.require_auth
+    @auth.require_session_auth
     def totp_reset():
         user = auth.current_user()
         if user is None:

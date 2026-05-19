@@ -4,12 +4,13 @@ from concurrent.futures import ThreadPoolExecutor
 from logging import Logger
 from urllib import request
 
-from ..repositories import UserStore
+from ..repositories import SystemConfigStore, UserStore
 
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="ntfy")
 
 
 def notify_new_message(
+    system_config_store: SystemConfigStore,
     user_store: UserStore,
     owner_id: str,
     *,
@@ -21,7 +22,7 @@ def notify_new_message(
     text = message_text.strip()
     if not url or not text:
         return
-    title_fallback = user_store.get_effective_title("ChatAPI")
+    title_fallback = system_config_store.get_effective_title("ChatAPI")
 
     def send() -> None:
         body = text.encode("utf-8")

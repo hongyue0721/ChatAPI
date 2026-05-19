@@ -9,7 +9,7 @@ from ..repositories import UserStore
 def register_user_config_routes(app: Flask, *, auth: AuthContext, user_store: UserStore) -> None:
 
     @app.get("/api/user/config")
-    @auth.require_auth
+    @auth.require_session_auth
     def get_user_config():
         owner_id = auth.owner_id()
         return {
@@ -18,7 +18,7 @@ def register_user_config_routes(app: Flask, *, auth: AuthContext, user_store: Us
         }
 
     @app.post("/api/user/config")
-    @auth.require_auth
+    @auth.require_session_auth
     def update_user_config():
         data = request.get_json(silent=True) or {}
         if not isinstance(data, dict):

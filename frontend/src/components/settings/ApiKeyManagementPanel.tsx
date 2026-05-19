@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Button, Form, Input, Popconfirm, Space, Table, Typography, message } from 'antd'
+import { Button, Form, Input, Popconfirm, Space, Table, Typography } from 'antd'
 import { DeleteOutlined, PlusOutlined, ThunderboltOutlined } from '@ant-design/icons'
 
+import { appMessage } from '../../lib/antdApp'
 import { requestJson } from '../../lib/api'
 import type { ApiKeyInfo } from '../../types/chat'
 
@@ -15,6 +16,7 @@ export function ApiKeyManagementPanel({ open }: ApiKeyManagementPanelProps) {
   const [creating, setCreating] = useState(false)
   const [deletingId, setDeletingId] = useState('')
   const [generating, setGenerating] = useState(false)
+  const [apiKeyValue, setApiKeyValue] = useState('')
   const [form] = Form.useForm()
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export function ApiKeyManagementPanel({ open }: ApiKeyManagementPanelProps) {
         setApiKeys(data.api_keys)
       } catch (error) {
         if (!active) return
-        message.error(error instanceof Error ? error.message : '加载 API Key 列表失败')
+        appMessage.error(error instanceof Error ? error.message : '加载 API Key 列表失败')
       } finally {
         if (active) setLoading(false)
       }
@@ -49,9 +51,10 @@ export function ApiKeyManagementPanel({ open }: ApiKeyManagementPanelProps) {
       })
       setApiKeys((prev) => [...prev, data.api_key])
       form.resetFields()
-      message.success('API Key 已创建')
+      setApiKeyValue('')
+      appMessage.success('API Key 已创建')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '创建 API Key 失败')
+      appMessage.error(error instanceof Error ? error.message : '创建 API Key 失败')
     } finally {
       setCreating(false)
     }
@@ -62,9 +65,9 @@ export function ApiKeyManagementPanel({ open }: ApiKeyManagementPanelProps) {
     try {
       await requestJson(`/api/user/api-keys/${keyId}`, { method: 'DELETE' })
       setApiKeys((prev) => prev.filter((k) => k.id !== keyId))
-      message.success('API Key 已删除')
+      appMessage.success('API Key 已删除')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '删除 API Key 失败')
+      appMessage.error(error instanceof Error ? error.message : '删除 API Key 失败')
     } finally {
       setDeletingId('')
     }
@@ -74,9 +77,10 @@ export function ApiKeyManagementPanel({ open }: ApiKeyManagementPanelProps) {
     setGenerating(true)
     try {
       const data = await requestJson<{ ok: boolean; api_key: string }>('/api/user/api-keys/generate')
+      setApiKeyValue(data.api_key)
       form.setFieldValue('api_key', data.api_key)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '生成 API Key 失败')
+      appMessage.error(error instanceof Error ? error.message : '生成 API Key 失败')
     } finally {
       setGenerating(false)
     }
@@ -143,8 +147,17 @@ export function ApiKeyManagementPanel({ open }: ApiKeyManagementPanelProps) {
         </Form.Item>
         <Form.Item name="api_key" label="API Key" extra="自定义或点击生成按钮创建强密钥（至少 4 个字符）">
           <Space.Compact style={{ width: '100%' }}>
-            <Input placeholder="留空则自动生成" allowClear style={{ fontFamily: 'monospace' }} />
-            <Button icon={<ThunderboltOutlined />} onClick={handleGenerate} loading={generating}>
+            <Input
+              placeholder="留空则自动生成"
+              allowClear
+              style={{ fontFamily: 'monospace' }}
+              value={apiKeyValue}
+              onChange={(e) => {
+                setApiKeyValue(e.target.value)
+                form.setFieldValue('api_key', e.target.value)
+              }}
+            />
+            <Button htmlType="button" icon={<ThunderboltOutlined />} onClick={handleGenerate} loading={generating}>
               生成
             </Button>
           </Space.Compact>

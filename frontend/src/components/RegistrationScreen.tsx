@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, Card, Form, Input, Typography, message } from 'antd'
+import { Button, Card, Form, Input, Typography } from 'antd'
 
 import { CosmicBackdrop } from './CosmicBackdrop'
+import { appMessage } from '../lib/antdApp'
 import { requestJson } from '../lib/api'
 import type { RegisterConfig } from '../types/chat'
 
@@ -64,10 +65,11 @@ export function RegistrationScreen({ onRegistered, onBackToLogin }: Registration
     if (geetestReadyRef.current) return
 
     let mounted = true
+    const captchaId = config.geetest_captcha_id
 
     function initCaptcha() {
       if (!mounted || !window.initGeetest4 || geetestReadyRef.current) return
-      window.initGeetest4({ captchaId: config.geetest_captcha_id, product: 'popup' }, (captcha) => {
+      window.initGeetest4({ captchaId, product: 'popup' }, (captcha) => {
         if (!mounted) return
         captchaRef.current = captcha
         geetestReadyRef.current = true
@@ -106,7 +108,7 @@ export function RegistrationScreen({ onRegistered, onBackToLogin }: Registration
   async function handleSendCode() {
     const email = form.getFieldValue('email') as string
     if (!email || !email.includes('@')) {
-      message.warning('请先输入有效的邮箱地址')
+      appMessage.warning('请先输入有效的邮箱地址')
       return
     }
     setSendingCode(true)
@@ -115,10 +117,10 @@ export function RegistrationScreen({ onRegistered, onBackToLogin }: Registration
         method: 'POST',
         body: JSON.stringify({ email }),
       })
-      message.success('验证码已发送')
+      appMessage.success('验证码已发送')
       setCodeCountdown(60)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '发送验证码失败')
+      appMessage.error(error instanceof Error ? error.message : '发送验证码失败')
     } finally {
       setSendingCode(false)
     }
@@ -128,7 +130,7 @@ export function RegistrationScreen({ onRegistered, onBackToLogin }: Registration
     try {
       const values = await form.validateFields()
       if (values.password !== values.confirmPassword) {
-        message.error('两次输入的密码不一致')
+        appMessage.error('两次输入的密码不一致')
         return
       }
 
@@ -138,7 +140,7 @@ export function RegistrationScreen({ onRegistered, onBackToLogin }: Registration
       if (config?.geetest_enabled && captchaRef.current) {
         const result = captchaRef.current.getValidate()
         if (!result) {
-          message.warning('请先完成人机验证')
+          appMessage.warning('请先完成人机验证')
           setLoading(false)
           return
         }
@@ -155,10 +157,10 @@ export function RegistrationScreen({ onRegistered, onBackToLogin }: Registration
         }),
       })
 
-      message.success('注册成功，请登录')
+      appMessage.success('注册成功，请登录')
       onRegistered()
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '注册失败')
+      appMessage.error(error instanceof Error ? error.message : '注册失败')
       if (captchaRef.current) {
         captchaRef.current.reset()
       }

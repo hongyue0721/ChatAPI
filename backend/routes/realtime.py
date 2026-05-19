@@ -18,7 +18,7 @@ def register_realtime_routes(app: Flask, *, deps: AppDependencies) -> None:
 
     @sock.route("/api/ws")
     def websocket_sync(ws: Any) -> None:
-        if auth.current_user() is None and not auth.is_request_authorized_by_api_key():
+        if auth.current_user() is None:
             ws.close()
             return
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
+import { Spin } from 'antd'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { message, Spin } from 'antd'
 
 import './App.css'
 import { HomepageScreen } from './components/HomepageScreen'
@@ -10,6 +10,7 @@ import { StatisticsPage } from './components/StatisticsPage'
 import { ThemeToggle } from './components/ThemeToggle'
 import { WorkspaceRoute } from './components/WorkspaceRoute'
 import { useAuthSession } from './hooks/useAuthSession'
+import { appMessage } from './lib/antdApp'
 import type { LoginFormValues } from './types/chat'
 
 function RouteLoading() {
@@ -35,9 +36,9 @@ function LoginRoute() {
       // Check if TOTP is required based on the error response
       if (error instanceof Error && (error as any).responseBody?.totp_required) {
         setTotpRequired(true)
-        message.error(error instanceof Error ? error.message : '请输入验证码')
+        appMessage.error(error instanceof Error ? error.message : '请输入验证码')
       } else {
-        message.error(error instanceof Error ? error.message : '登录失败')
+        appMessage.error(error instanceof Error ? error.message : '登录失败')
       }
     } finally {
       setLoading(false)

@@ -48,7 +48,7 @@ def register_conversation_routes(app: Flask, *, deps: AppDependencies) -> None:
     app.extensions["chat_reconcile_waiting"] = reconcile_waiting_conversations
 
     @app.get("/api/conversations")
-    @auth.require_auth
+    @auth.require_session_auth
     def list_conversations():
         owner = auth.owner_id()
         reconcile_waiting_conversations(owner)
@@ -59,7 +59,7 @@ def register_conversation_routes(app: Flask, *, deps: AppDependencies) -> None:
         }
 
     @app.post("/api/conversations")
-    @auth.require_auth
+    @auth.require_session_auth
     def create_conversation():
         data = request.get_json(silent=True) or {}
         title = build_title(str(data.get("title", "")).strip()) or "新会话"
@@ -68,7 +68,7 @@ def register_conversation_routes(app: Flask, *, deps: AppDependencies) -> None:
         return {"ok": True, "conversation": conversation_payload(conversation)}
 
     @app.get("/api/conversations/<conversation_id>")
-    @auth.require_auth
+    @auth.require_session_auth
     def get_conversation(conversation_id: str):
         owner = auth.owner_id()
         reconcile_waiting_conversations(owner)
@@ -78,7 +78,7 @@ def register_conversation_routes(app: Flask, *, deps: AppDependencies) -> None:
         return {"ok": True, "conversation": conversation_payload(conversation)}
 
     @app.get("/api/conversations/<conversation_id>/messages")
-    @auth.require_auth
+    @auth.require_session_auth
     def get_messages(conversation_id: str):
         reconcile_waiting_conversations(auth.owner_id())
         try:
@@ -88,7 +88,7 @@ def register_conversation_routes(app: Flask, *, deps: AppDependencies) -> None:
         return {"ok": True, "items": [message.to_dict() for message in messages]}
 
     @app.delete("/api/conversations/<conversation_id>")
-    @auth.require_auth
+    @auth.require_session_auth
     def delete_conversation(conversation_id: str):
         owner = auth.owner_id()
         try:
@@ -100,7 +100,7 @@ def register_conversation_routes(app: Flask, *, deps: AppDependencies) -> None:
         return {"ok": True}
 
     @app.post("/api/conversations/prune")
-    @auth.require_auth
+    @auth.require_session_auth
     def prune_conversations():
         data = request.get_json(silent=True) or {}
         keep_count = data.get("keep_count")
@@ -126,7 +126,7 @@ def register_conversation_routes(app: Flask, *, deps: AppDependencies) -> None:
         }
 
     @app.post("/api/conversations/<conversation_id>/abort")
-    @auth.require_auth
+    @auth.require_session_auth
     def abort_conversation(conversation_id: str):
         data = request.get_json(silent=True) or {}
         error_message = str(data.get("error", "")).strip() or "request aborted"
@@ -155,7 +155,7 @@ def register_conversation_routes(app: Flask, *, deps: AppDependencies) -> None:
         return {"ok": True, "conversation": conversation_payload(updated)}
 
     @app.post("/api/conversations/<conversation_id>/rename")
-    @auth.require_auth
+    @auth.require_session_auth
     def rename_conversation(conversation_id: str):
         data = request.get_json(silent=True) or {}
         title = build_title(str(data.get("title", "")).strip())

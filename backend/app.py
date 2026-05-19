@@ -4,7 +4,7 @@ from flask import Flask, abort, send_from_directory
 from flask_cors import CORS
 
 from .core import AppDependencies, AuthContext, settings
-from .repositories import ConversationStore, UserStore, utc_now_iso
+from .repositories import ConversationStore, SystemConfigStore, UserStore, utc_now_iso
 from .services import ImageAssetStore, MessageRateLimiter, PendingTurnRegistry
 from .services.realtime import RealtimeBroker
 from .routes import (
@@ -22,6 +22,7 @@ from .routes import (
 
 def create_app() -> Flask:
     store = ConversationStore(settings.db_path)
+    system_config_store = SystemConfigStore(settings.db_path)
     user_store = UserStore(settings.db_path)
 
     # Ensure admin user exists
@@ -36,7 +37,7 @@ def create_app() -> Flask:
                 (utc_now_iso(), admin.id),
             )
 
-    session_secret = store.get_or_create_session_secret(settings.session_secret)
+    session_secret = system_config_store.get_or_create_session_secret(settings.session_secret)
 
     app = Flask(__name__)
     app.config.update(SECRET_KEY=session_secret)
@@ -44,19 +45,21 @@ def create_app() -> Flask:
 
     auth = AuthContext(store, user_store)
     pending_turns = PendingTurnRegistry()
-    message_rate_limiter = MessageRateLimiter(limit=0)
+    message_rate_limiter = MessageRateLimiter()
     image_store = ImageAssetStore(settings.uploads_img_dir)
     realtime = RealtimeBroker(store, user_store)
     deps = AppDependencies(
         settings=settings,
         auth=auth,
         store=store,
+        system_config_store=system_config_store,
         user_store=user_store,
         pending_turns=pending_turns,
         message_rate_limiter=message_rate_limiter,
         image_store=image_store,
     )
     app.extensions["chat_store"] = store
+    app.extensions["chat_system_config_store"] = system_config_store
     app.extensions["chat_user_store"] = user_store
     app.extensions["chat_realtime"] = realtime
     app.extensions["chat_image_store"] = image_store
@@ -65,10 +68,16 @@ def create_app() -> Flask:
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "title": user_store.get_effective_title("ChatAPI")}
+        return {"ok": True, "title": system_config_store.get_effective_title("ChatAPI")}
 
-    register_auth_routes(app, auth=auth, settings=settings, user_store=user_store)
-    register_admin_routes(app, auth=auth, user_store=user_store)
+    register_auth_routes(
+        app,
+        auth=auth,
+        settings=settings,
+        system_config_store=system_config_store,
+        user_store=user_store,
+    )
+    register_admin_routes(app, auth=auth, store=store, user_store=user_store)
     register_user_config_routes(app, auth=auth, user_store=user_store)
     register_user_api_key_routes(app, auth=auth, user_store=user_store)
     register_conversation_routes(app, deps=deps)

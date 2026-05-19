@@ -3,11 +3,17 @@ from __future__ import annotations
 from flask import Flask, current_app, jsonify, request
 
 from ..core import AuthContext
-from ..repositories import UserStore
+from ..repositories import ConversationStore, UserStore
 from ..services.email import send_test_email
 
 
-def register_admin_routes(app: Flask, *, auth: AuthContext, user_store: UserStore) -> None:
+def register_admin_routes(
+    app: Flask,
+    *,
+    auth: AuthContext,
+    store: ConversationStore,
+    user_store: UserStore,
+) -> None:
 
     @app.get("/api/admin/users")
     @auth.require_admin
@@ -50,6 +56,10 @@ def register_admin_routes(app: Flask, *, auth: AuthContext, user_store: UserStor
         if current and current["id"] == user_id:
             return jsonify({"error": "不能删除自己"}), 400
 
+        if user_store.get_user(user_id) is None:
+            return jsonify({"error": "用户不存在"}), 404
+
+        store.delete_owner_conversations(user_id)
         if not user_store.delete_user(user_id):
             return jsonify({"error": "用户不存在"}), 404
         return {"ok": True}

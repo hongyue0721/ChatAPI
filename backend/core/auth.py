@@ -21,9 +21,21 @@ class AuthContext:
         user_id = str(session.get("user_id", "") or "").strip()
         username = str(session.get("username", "") or "").strip()
         role = str(session.get("role", "") or "").strip()
-        if user_id and username:
+        if not user_id or not username:
+            return None
+        if self.user_store is None:
             return {"id": user_id, "username": username, "role": role}
-        return None
+
+        db_user = self.user_store.get_user(user_id)
+        if db_user is None:
+            session.clear()
+            return None
+
+        if username != db_user.username or role != db_user.role:
+            session["username"] = db_user.username
+            session["role"] = db_user.role
+
+        return {"id": db_user.id, "username": db_user.username, "role": db_user.role}
 
     def request_api_key(self) -> str:
         return str(
@@ -37,6 +49,9 @@ class AuthContext:
         if not api_key or self.user_store is None:
             return None
         return self.user_store.resolve_api_key_owner(api_key)
+
+    def is_request_authorized_by_api_key(self) -> bool:
+        return self.resolve_owner_from_api_key() is not None
 
     def owner_id(self) -> str:
         user = self.current_user()
@@ -54,9 +69,18 @@ class AuthContext:
     def require_auth(self, view: Callable[..., Any]):
         @wraps(view)
         def wrapped(*args, **kwargs):
-            if self.current_user() is None and self.resolve_owner_from_api_key() is None:
+            if self.current_user() is None and not self.is_request_authorized_by_api_key():
                 return jsonify({"error": "unauthorized"}), 401
             return view(*args, **kwargs)
+        return wrapped
+
+    def require_session_auth(self, view: Callable[..., Any]):
+        @wraps(view)
+        def wrapped(*args, **kwargs):
+            if self.current_user() is None:
+                return jsonify({"error": "unauthorized"}), 401
+            return view(*args, **kwargs)
+
         return wrapped
 
     def require_admin(self, view: Callable[..., Any]):

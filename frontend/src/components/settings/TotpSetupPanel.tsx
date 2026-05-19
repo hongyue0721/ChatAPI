@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Button, Image, Input, Space, Typography, message } from 'antd'
+import { Button, Image, Input, Space, Typography } from 'antd'
 
+import { appMessage } from '../../lib/antdApp'
 import { requestJson } from '../../lib/api'
 import type { TotpSetup } from '../../types/chat'
 
@@ -23,7 +24,7 @@ export function TotpSetupPanel({ totpEnabled, onRefresh }: TotpSetupPanelProps) 
       setSetup(data)
       setCode('')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '获取 TOTP 信息失败')
+      appMessage.error(error instanceof Error ? error.message : '获取 TOTP 信息失败')
     } finally {
       setLoading(false)
     }
@@ -31,7 +32,7 @@ export function TotpSetupPanel({ totpEnabled, onRefresh }: TotpSetupPanelProps) 
 
   async function handleConfirm() {
     if (!setup || !code.trim()) {
-      message.warning('请输入验证码')
+      appMessage.warning('请输入验证码')
       return
     }
     setConfirming(true)
@@ -40,12 +41,12 @@ export function TotpSetupPanel({ totpEnabled, onRefresh }: TotpSetupPanelProps) 
         method: 'POST',
         body: JSON.stringify({ secret: setup.secret, code: code.trim() }),
       })
-      message.success('TOTP 已启用')
+      appMessage.success('TOTP 已启用')
       setSetup(null)
       setCode('')
       onRefresh()
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '验证码不正确')
+      appMessage.error(error instanceof Error ? error.message : '验证码不正确')
     } finally {
       setConfirming(false)
     }
@@ -55,12 +56,12 @@ export function TotpSetupPanel({ totpEnabled, onRefresh }: TotpSetupPanelProps) 
     setResetting(true)
     try {
       await requestJson('/api/auth/totp/reset', { method: 'POST' })
-      message.success('TOTP 已重置')
+      appMessage.success('TOTP 已重置')
       setSetup(null)
       setCode('')
       onRefresh()
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '重置 TOTP 失败')
+      appMessage.error(error instanceof Error ? error.message : '重置 TOTP 失败')
     } finally {
       setResetting(false)
     }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Button, Divider, Input, InputNumber, Switch, Typography, message } from 'antd'
+import { Button, Divider, Input, InputNumber, Switch, Typography } from 'antd'
 
+import { appMessage } from '../../lib/antdApp'
 import { requestJson } from '../../lib/api'
 import type { UserConfig } from '../../types/chat'
 import { TotpSetupPanel } from './TotpSetupPanel'
@@ -43,7 +44,7 @@ export function UserSettingsPanel({ open, onClose, totpEnabled, onTotpRefresh }:
         setSavedConfig(nextConfig)
       } catch (error) {
         if (!active) return
-        message.error(error instanceof Error ? error.message : '用户设置加载失败')
+        appMessage.error(error instanceof Error ? error.message : '用户设置加载失败')
       } finally {
         if (active) setLoading(false)
       }
@@ -80,9 +81,9 @@ export function UserSettingsPanel({ open, onClose, totpEnabled, onTotpRefresh }:
       }
       setConfig(nextConfig)
       setSavedConfig(nextConfig)
-      message.success('用户设置已保存')
+      appMessage.success('用户设置已保存')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '用户设置保存失败')
+      appMessage.error(error instanceof Error ? error.message : '用户设置保存失败')
     } finally {
       setSaving(false)
     }

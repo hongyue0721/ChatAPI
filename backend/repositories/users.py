@@ -95,6 +95,7 @@ class UserStore:
         conn = sqlite3.connect(self.db_path, timeout=30, check_same_thread=False)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA foreign_keys = ON")
         return conn
 
     @contextmanager
@@ -125,10 +126,6 @@ class UserStore:
                 )
                 """
             )
-            # Migration: add last_login_at column if missing
-            cols = {row[1] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
-            if "last_login_at" not in cols:
-                conn.execute("ALTER TABLE users ADD COLUMN last_login_at TEXT")
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS user_api_keys (
@@ -158,7 +155,6 @@ class UserStore:
                 )
                 """
             )
-
     # --- User CRUD ---
 
     def create_user(self, username: str, password: str, role: str = "user") -> User:
@@ -184,6 +180,8 @@ class UserStore:
 
     def delete_user(self, user_id: str) -> bool:
         with self._connection() as conn:
+            conn.execute("DELETE FROM user_api_keys WHERE user_id = ?", (user_id,))
+            conn.execute("DELETE FROM user_configs WHERE user_id = ?", (user_id,))
             cursor = conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
             return cursor.rowcount > 0
 
@@ -246,6 +244,12 @@ class UserStore:
             raise ValueError("API Key 至少需要 4 个字符")
 
         with self._connection() as conn:
+            existing_user = conn.execute(
+                "SELECT id FROM users WHERE id = ?",
+                (user_id,),
+            ).fetchone()
+            if existing_user is None:
+                raise ValueError("用户不存在")
             existing = conn.execute("SELECT id FROM user_api_keys WHERE api_key = ?", (api_key,)).fetchone()
             if existing is not None:
                 raise ValueError("API Key 已被占用")
@@ -304,7 +308,10 @@ class UserStore:
             return None
         with self._connection() as conn:
             row = conn.execute(
-                "SELECT user_id FROM user_api_keys WHERE api_key = ?",
+                """SELECT uak.user_id
+                   FROM user_api_keys uak
+                   JOIN users u ON u.id = uak.user_id
+                   WHERE uak.api_key = ?""",
                 (raw_key,),
             ).fetchone()
         if row is None:
@@ -412,59 +419,6 @@ class UserStore:
 
     def set_automation_rules(self, user_id: str, rules_json: str) -> None:
         self.set_user_config(user_id, "automation_rules_json", rules_json)
-
-    # --- System config (global, only admin) ---
-
-    def get_system_config(self, key: str, default: str = "") -> str:
-        with self._connection() as conn:
-            row = conn.execute(
-                "SELECT value FROM user_configs WHERE user_id = 'system' AND key = ?",
-                (key,),
-            ).fetchone()
-        if row is None:
-            return default
-        return str(row["value"] or "")
-
-    def set_system_config(self, key: str, value: str) -> None:
-        with self._connection() as conn:
-            conn.execute(
-                """
-                INSERT INTO user_configs (user_id, key, value)
-                VALUES ('system', ?, ?)
-                ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value
-                """,
-                (key, value),
-            )
-
-    def get_system_config_snapshot(self) -> dict[str, Any]:
-        return {
-            "public_statistics": self.get_system_config("public_statistics", "0") == "1",
-            "title_enabled": self.get_system_config("flag.title", "0") == "1",
-            "title": self.get_system_config("value.title", ""),
-            "external_registration_enabled": self.get_system_config("flag.external_registration", "0") == "1",
-            "email_verification_enabled": self.get_system_config("flag.email_verification", "0") == "1",
-        }
-
-    def update_system_config_snapshot(self, data: dict[str, Any]) -> None:
-        public_statistics = bool(data.get("public_statistics"))
-        self.set_system_config("public_statistics", "1" if public_statistics else "0")
-
-        title_enabled = bool(data.get("title_enabled"))
-        title = str(data.get("title", ""))
-        self.set_system_config("flag.title", "1" if title_enabled else "0")
-        self.set_system_config("value.title", title)
-
-        ext_reg = bool(data.get("external_registration_enabled"))
-        self.set_system_config("flag.external_registration", "1" if ext_reg else "0")
-
-        email_ver = bool(data.get("email_verification_enabled"))
-        self.set_system_config("flag.email_verification", "1" if email_ver else "0")
-
-    def get_effective_title(self, fallback: str = "") -> str:
-        if self.get_system_config("flag.title", "0") != "1":
-            return fallback
-        value = self.get_system_config("value.title", "").strip()
-        return value or fallback
 
     @staticmethod
     def _row_to_user(row: sqlite3.Row) -> User:

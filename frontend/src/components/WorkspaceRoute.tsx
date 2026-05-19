@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { App as AntApp, Drawer, Grid, Layout, Spin } from 'antd'
+import { Drawer, Grid, Layout, Spin } from 'antd'
 import { Navigate } from 'react-router-dom'
 
 import { ChatPane } from './ChatPane'
@@ -140,79 +140,77 @@ export function WorkspaceRoute() {
   )
 
   const workspacePage = workspace.auth.authenticated ? (
-    <AntApp>
-      <Layout className="app-shell">
-        {!isMobile && (
-          <Sider
-            ref={sidebarElementRef}
-            className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
-            width={sidebarCollapsed ? 72 : sidebarWidth}
-            collapsedWidth={72}
-            style={{ width: sidebarCollapsed ? 72 : sidebarWidth }}
-          >
-            {sidebar}
-            {!sidebarCollapsed ? (
-              <div
-                className="sidebar-resizer"
-                onPointerDown={(event) => {
-                  event.preventDefault()
-                  sidebarResizeRef.current = {
-                    startX: event.clientX,
-                    startWidth: sidebarWidth,
-                  }
-                  document.body.classList.add('is-resizing-sidebar')
-                }}
-              />
-            ) : null}
-          </Sider>
-        )}
-        <Layout className="main-layout">
-          <Header className="header-shell">
-            <div className="header-glow" />
-          </Header>
-          <Content className="content-shell">
-            <ChatPane
-              availableToolSchemas={workspace.availableToolSchemas}
-              chatScrollRef={workspace.chatScrollRef}
-              composer={workspace.composer}
-              composerMode={workspace.composerMode}
-              draftBuffer={workspace.draftBuffer}
-              handleComposerKeyDown={workspace.handleComposerKeyDown}
-              isMobile={isMobile}
-              isWaitingForUser={workspace.isWaitingForUser}
-              keyboardOffset={workspace.keyboardOffset}
-              messagesLoading={workspace.messagesLoading}
-              onDraft={workspace.handleDraft}
-              onLogout={workspace.handleLogout}
-              onOpenDrawer={() => workspace.setDrawerOpen(true)}
-              onSend={workspace.handleSend}
-              selectedConversationTitle={workspace.selectedConversation?.title || ''}
-              selectedToolSchema={workspace.selectedToolSchema}
-              sending={workspace.sending}
-              setComposer={workspace.setComposer}
-              setComposerMode={workspace.setComposerMode}
-              setToolCallId={workspace.setToolCallId}
-              setToolFormValues={workspace.setToolFormValues}
-              setToolName={workspace.setToolName}
-              toolCallId={workspace.toolCallId}
-              toolFormValues={workspace.toolFormValues}
-              toolName={workspace.toolName}
-              visibleMessages={workspace.visibleMessages}
-            />
-          </Content>
-        </Layout>
-        <Drawer
-          open={workspace.drawerOpen}
-          onClose={() => workspace.setDrawerOpen(false)}
-          placement="left"
-          width={320}
-          className="mobile-drawer"
-          bodyStyle={{ padding: 0 }}
+    <Layout className="app-shell">
+      {!isMobile && (
+        <Sider
+          ref={sidebarElementRef}
+          className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
+          width={sidebarCollapsed ? 72 : sidebarWidth}
+          collapsedWidth={72}
+          style={{ width: sidebarCollapsed ? 72 : sidebarWidth }}
         >
           {sidebar}
-        </Drawer>
+          {!sidebarCollapsed ? (
+            <div
+              className="sidebar-resizer"
+              onPointerDown={(event) => {
+                event.preventDefault()
+                sidebarResizeRef.current = {
+                  startX: event.clientX,
+                  startWidth: sidebarWidth,
+                }
+                document.body.classList.add('is-resizing-sidebar')
+              }}
+            />
+          ) : null}
+        </Sider>
+      )}
+      <Layout className="main-layout">
+        <Header className="header-shell">
+          <div className="header-glow" />
+        </Header>
+        <Content className="content-shell">
+          <ChatPane
+            availableToolSchemas={workspace.availableToolSchemas}
+            chatScrollRef={workspace.chatScrollRef}
+            composer={workspace.composer}
+            composerMode={workspace.composerMode}
+            draftBuffer={workspace.draftBuffer}
+            handleComposerKeyDown={workspace.handleComposerKeyDown}
+            isMobile={isMobile}
+            isWaitingForUser={workspace.isWaitingForUser}
+            keyboardOffset={workspace.keyboardOffset}
+            messagesLoading={workspace.messagesLoading}
+            onDraft={workspace.handleDraft}
+            onLogout={workspace.handleLogout}
+            onOpenDrawer={() => workspace.setDrawerOpen(true)}
+            onSend={workspace.handleSend}
+            selectedConversationTitle={workspace.selectedConversation?.title || ''}
+            selectedToolSchema={workspace.selectedToolSchema}
+            sending={workspace.sending}
+            setComposer={workspace.setComposer}
+            setComposerMode={workspace.setComposerMode}
+            setToolCallId={workspace.setToolCallId}
+            setToolFormValues={workspace.setToolFormValues}
+            setToolName={workspace.setToolName}
+            toolCallId={workspace.toolCallId}
+            toolFormValues={workspace.toolFormValues}
+            toolName={workspace.toolName}
+            visibleMessages={workspace.visibleMessages}
+          />
+        </Content>
       </Layout>
-    </AntApp>
+      <Drawer
+        open={workspace.drawerOpen}
+        onClose={() => workspace.setDrawerOpen(false)}
+        placement="left"
+        width={320}
+        className="mobile-drawer"
+        bodyStyle={{ padding: 0 }}
+      >
+        {sidebar}
+      </Drawer>
+    </Layout>
   ) : (
     <Navigate to="/login" replace />
   )

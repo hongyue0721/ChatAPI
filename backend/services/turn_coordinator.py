@@ -162,10 +162,9 @@ class TurnCoordinator:
         model = str(normalized_data.get("model") or "mock-gpt-4.1-mini")
         owner = self.auth.owner_id()
         rate_limit = self.user_store.get_effective_messages_per_minute_limit(owner, 0)
-        self.message_rate_limiter.limit = rate_limit
-        if not self.message_rate_limiter.allow(owner):
+        if not self.message_rate_limiter.allow(owner, rate_limit):
             return build_openai_error(
-                f"rate limit exceeded: max {self.message_rate_limiter.limit} messages per minute",
+                f"rate limit exceeded: max {rate_limit} messages per minute",
                 code="rate_limit_exceeded",
                 status=429,
             )
@@ -260,6 +259,7 @@ class TurnCoordinator:
                     },
                 )
             notify_new_message(
+                self._deps.system_config_store,
                 self.user_store,
                 owner,
                 conversation_title=updated_conversation.title or build_title(context_text),

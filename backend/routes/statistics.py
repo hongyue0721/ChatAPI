@@ -8,11 +8,11 @@ from ..core import AppDependencies
 def register_statistics_routes(app: Flask, *, deps: AppDependencies) -> None:
     auth = deps.auth
     store = deps.store
-    user_store = deps.user_store
+    system_config_store = deps.system_config_store
 
     @app.get("/api/statistics/summary")
     def get_statistics_summary():
-        public_statistics = user_store.get_system_config("public_statistics", "0") == "1"
+        public_statistics = system_config_store.get_system_config("public_statistics", "0") == "1"
         if not public_statistics and auth.current_user() is None and auth.resolve_owner_from_api_key() is None:
             return {"error": "unauthorized"}, 401
 
