@@ -6,10 +6,12 @@ import type { LoginFormValues } from '../types/chat'
 type LoginScreenProps = {
   loading: boolean
   totpEnabled: boolean
+  registrationEnabled: boolean
   onSubmit: (values: LoginFormValues) => void | Promise<void>
+  onNavigateToRegister: () => void
 }
 
-export function LoginScreen({ loading, onSubmit, totpEnabled }: LoginScreenProps) {
+export function LoginScreen({ loading, onSubmit, totpEnabled, registrationEnabled, onNavigateToRegister }: LoginScreenProps) {
   const [form] = Form.useForm<LoginFormValues>()
 
   return (
@@ -62,6 +64,11 @@ export function LoginScreen({ loading, onSubmit, totpEnabled }: LoginScreenProps
           <Button type="primary" htmlType="submit" size="large" block loading={loading}>
             登录
           </Button>
+          {registrationEnabled ? (
+            <Button block onClick={onNavigateToRegister}>
+              注册账号
+            </Button>
+          ) : null}
         </Form>
       </Card>
     </div>

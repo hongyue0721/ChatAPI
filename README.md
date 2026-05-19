@@ -1,7 +1,8 @@
-# ChatAPI 部署说明
-
-本项目是一个让 各类 AI 客户端用 OpenAI Responses 风格接口调用人类的项目，并带有一个 Web 控制台界面，可以帮你组装 Tool Calling 请求。  
-你可以让别人把你配置到 Agent 或 聊天机器人中，然后自己扮演 AI 助手被调用。
+# ChatAPI
+[[Telegram](t.me/hutao_space)] |  [[LinuxDO](https://linux.do/u/hutao)] | [[BiliBili](https://www.bilibili.com/video/BV11PLg6LEbB)]  
+本项目是一个让 各类 AI 客户端用 OpenAI Responses 风格接口调用人类的项目，并带有一个 Web 控制台界面，可以帮你组装 Tool Calling 请求，或设置自动回复规则。
+通过这个项目，你可以让别人把你配置到 Agent 或 聊天机器人中，然后自己扮演 AI 助手被调用。
+也可以在自己开发 Agent 的时候作为 Mock LLM 使用。
 
 - 后端：Flask
 - 前端：React + Vite + Ant Design

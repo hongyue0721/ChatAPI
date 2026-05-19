@@ -441,6 +441,8 @@ class UserStore:
             "public_statistics": self.get_system_config("public_statistics", "0") == "1",
             "title_enabled": self.get_system_config("flag.title", "0") == "1",
             "title": self.get_system_config("value.title", ""),
+            "external_registration_enabled": self.get_system_config("flag.external_registration", "0") == "1",
+            "email_verification_enabled": self.get_system_config("flag.email_verification", "0") == "1",
         }
 
     def update_system_config_snapshot(self, data: dict[str, Any]) -> None:
@@ -451,6 +453,12 @@ class UserStore:
         title = str(data.get("title", ""))
         self.set_system_config("flag.title", "1" if title_enabled else "0")
         self.set_system_config("value.title", title)
+
+        ext_reg = bool(data.get("external_registration_enabled"))
+        self.set_system_config("flag.external_registration", "1" if ext_reg else "0")
+
+        email_ver = bool(data.get("email_verification_enabled"))
+        self.set_system_config("flag.email_verification", "1" if email_ver else "0")
 
     def get_effective_title(self, fallback: str = "") -> str:
         if self.get_system_config("flag.title", "0") != "1":

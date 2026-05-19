@@ -5,6 +5,7 @@ import { message, Spin } from 'antd'
 import './App.css'
 import { HomepageScreen } from './components/HomepageScreen'
 import { LoginScreen } from './components/LoginScreen'
+import { RegistrationScreen } from './components/RegistrationScreen'
 import { StatisticsPage } from './components/StatisticsPage'
 import { ThemeToggle } from './components/ThemeToggle'
 import { WorkspaceRoute } from './components/WorkspaceRoute'
@@ -55,7 +56,29 @@ function LoginRoute() {
     <LoginScreen
       loading={loading}
       totpEnabled={auth.session.totp_enabled || totpRequired}
+      registrationEnabled={auth.session.registration_enabled}
       onSubmit={(values) => void handleSubmit(values)}
+      onNavigateToRegister={() => navigate('/register')}
+    />
+  )
+}
+
+function RegisterRoute() {
+  const navigate = useNavigate()
+  const auth = useAuthSession()
+
+  if (auth.loading) {
+    return <RouteLoading />
+  }
+
+  if (auth.session.authenticated) {
+    return <Navigate to="/app" replace />
+  }
+
+  return (
+    <RegistrationScreen
+      onRegistered={() => navigate('/login')}
+      onBackToLogin={() => navigate('/login')}
     />
   )
 }
@@ -84,6 +107,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomepageScreen />} />
         <Route path="/login" element={<LoginRoute />} />
+        <Route path="/register" element={<RegisterRoute />} />
         <Route path="/stat" element={<StatisticsRoute />} />
         <Route path="/statistics" element={<StatisticsRoute />} />
         <Route path="/app/*" element={<WorkspaceRoute />} />

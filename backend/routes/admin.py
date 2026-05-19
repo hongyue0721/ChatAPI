@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from flask import Flask, jsonify, request
+from flask import Flask, current_app, jsonify, request
 
 from ..core import AuthContext
 from ..repositories import UserStore
+from ..services.email import send_test_email
 
 
 def register_admin_routes(app: Flask, *, auth: AuthContext, user_store: UserStore) -> None:
@@ -66,3 +67,17 @@ def register_admin_routes(app: Flask, *, auth: AuthContext, user_store: UserStor
             return jsonify({"error": "用户不存在"}), 404
 
         return {"ok": True}
+
+    @app.post("/api/admin/send-test-email")
+    @auth.require_admin
+    def send_test_email_route():
+        data = request.get_json(silent=True) or {}
+        email = str(data.get("email", "")).strip()
+
+        if not email or "@" not in email:
+            return jsonify({"error": "请输入有效的邮箱地址"}), 400
+
+        ok, message = send_test_email(email, logger=current_app.logger)
+        if ok:
+            return {"ok": True, "message": message}
+        return jsonify({"error": message}), 400

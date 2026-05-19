@@ -8,6 +8,7 @@ const DEFAULT_SESSION: AuthSession = {
   authenticated: false,
   user: null,
   totp_enabled: false,
+  registration_enabled: false,
 }
 
 export function useAuthSession() {

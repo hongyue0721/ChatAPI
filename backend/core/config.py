@@ -67,6 +67,15 @@ class Settings:
     tls_cert_file: Path | None
     tls_key_file: Path | None
     web_dist_dir: Path | None
+    smtp_host: str
+    smtp_port: int
+    smtp_username: str
+    smtp_password: str
+    smtp_from: str
+    smtp_use_tls: bool
+    geetest_captcha_id: str
+    geetest_captcha_key: str
+    geetest_api_server: str
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -124,6 +133,15 @@ class Settings:
             tls_cert_file=_resolve_optional_path(tls_cert_raw),
             tls_key_file=_resolve_optional_path(tls_key_raw),
             web_dist_dir=_resolve_optional_path(web_dist_raw),
+            smtp_host=_first_non_empty("CHATAPI_SMTP_HOST", "SMTP_HOST", default=""),
+            smtp_port=int(_first_non_empty("CHATAPI_SMTP_PORT", "SMTP_PORT", default="587")),
+            smtp_username=_first_non_empty("CHATAPI_SMTP_USERNAME", "SMTP_USERNAME", default=""),
+            smtp_password=_first_non_empty("CHATAPI_SMTP_PASSWORD", "SMTP_PASSWORD", default=""),
+            smtp_from=_first_non_empty("CHATAPI_SMTP_FROM", "SMTP_FROM", default=""),
+            smtp_use_tls=_first_non_empty("CHATAPI_SMTP_USE_TLS", "SMTP_USE_TLS", default="1") == "1",
+            geetest_captcha_id=_first_non_empty("CHATAPI_GEETEST_CAPTCHA_ID", "GEETEST_CAPTCHA_ID", default=""),
+            geetest_captcha_key=_first_non_empty("CHATAPI_GEETEST_CAPTCHA_KEY", "GEETEST_CAPTCHA_KEY", default=""),
+            geetest_api_server=_first_non_empty("CHATAPI_GEETEST_API_SERVER", "GEETEST_API_SERVER", default="http://gcaptcha4.geetest.com"),
         )
 
 

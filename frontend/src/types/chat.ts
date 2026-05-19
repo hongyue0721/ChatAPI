@@ -8,6 +8,7 @@ export type AuthSession = {
   authenticated: boolean
   user: AuthUser | null
   totp_enabled: boolean
+  registration_enabled: boolean
 }
 
 export type User = {
@@ -166,6 +167,15 @@ export type SystemConfig = {
   public_statistics: boolean
   title_enabled: boolean
   title: string
+  external_registration_enabled: boolean
+  email_verification_enabled: boolean
+}
+
+export type RegisterConfig = {
+  registration_enabled: boolean
+  email_verification_enabled: boolean
+  geetest_enabled: boolean
+  geetest_captcha_id: string
 }
 
 export type WorkspaceSnapshotEvent = {
